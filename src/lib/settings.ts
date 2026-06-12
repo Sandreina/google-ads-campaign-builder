@@ -3,7 +3,7 @@ import { STORAGE_KEYS } from './constants';
 import type { AiSettings } from './ai';
 
 export const aiSettingsSchema = z.object({
-  provider: z.enum(['anthropic', 'openai', 'compatible']),
+  provider: z.enum(['proxy', 'anthropic', 'openai', 'compatible']),
   apiKey: z.string(),
   model: z.string(),
   baseUrl: z.string().optional(),

@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Loader2, RotateCcw, Trash2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Loader2, RotateCcw, Trash2, LayoutGrid } from 'lucide-react';
 import { CampaignStoreProvider, useStore } from '@/store/CampaignStore';
 import { AppShell } from '@/components/shell/AppShell';
 import { CampaignSidebar } from '@/components/shell/CampaignSidebar';
@@ -33,6 +34,7 @@ export function EditorApp() {
 function EditorAppInner() {
   const { loaded, campaign, reorderAdGroupsByIndex, addAdGroup, resetDemo, clearProject } = useStore();
   const toast = useToast();
+  const navigate = useNavigate();
   const [view, setView] = useState<View>({ kind: 'overview' });
   const [importOpen, setImportOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
@@ -78,6 +80,9 @@ function EditorAppInner() {
             onReorder={reorderAdGroupsByIndex}
           />
           <div className="mt-auto flex flex-col gap-1 border-t border-border p-3">
+            <Button variant="ghost" size="sm" className="justify-start" onClick={() => navigate('/')}>
+              <LayoutGrid className="h-3.5 w-3.5" /> All projects
+            </Button>
             <Button variant="ghost" size="sm" className="justify-start" onClick={() => { resetDemo(); toast('Demo data reset'); setView({ kind: 'overview' }); }}>
               <RotateCcw className="h-3.5 w-3.5" /> Reset demo data
             </Button>

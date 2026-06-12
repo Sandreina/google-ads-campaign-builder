@@ -23,6 +23,17 @@ The intended workflow:
 
 ---
 
+## Project dashboard
+
+The app opens on a **dashboard** (route `#/`) listing every saved project as a card (campaign name, client, ad group count, review progress, last updated). From here you can:
+
+- **New project** — a short dialog (client, campaign, objective, budget) creates a blank campaign and opens it in the editor.
+- **Open** an existing project, **Duplicate** it (deep clone with brand-new stable IDs and a fresh review), or **Delete** it.
+- **Import project** — load a full project JSON export.
+- **Load sample project** — seed the realistic demo campaign.
+
+The editor's sidebar has an **All projects** link to return here. The editor lives at `#/editor` and the client experience at `#/review`.
+
 ## Editor workflow
 
 - **Campaign Overview** — edit campaign settings, see review progress, add an internal campaign note.
@@ -63,10 +74,12 @@ Every asset type supports bulk entry from a prominent **Paste** action:
 
 In the **Ad Copy** tab, each panel has a **Generate** action that builds candidate headlines and descriptions from the ad group's **keywords, theme, search intent, and client-facing context**. The dialog has two modes:
 
-- **AI** — a real LLM writes the copy from your inputs. Connect a provider once via **AI settings** (gear in the Generate dialog): **Anthropic (Claude)**, **OpenAI**, or any **OpenAI-compatible** endpoint (paste a gateway base URL). The call is made directly from the browser, so the API key is stored **only in this browser's localStorage** and is **never** included in any campaign or client export. The request uses structured JSON output; responses are parsed robustly and filtered to valid, non-duplicate items within the RSA character limits.
+- **AI** — a real LLM writes the copy from your inputs. Connect a provider once via **AI settings** (gear in the Generate dialog):
+  - **Server proxy (recommended)** — the app POSTs to `/api/llm/chat` and the **key stays on the server** (nothing sensitive in the browser). The proxy ships with the app: it runs as Vite dev/preview middleware (`npm run dev`) and as a zero-dependency production server (`npm start` → `server/proxy.mjs`). It selects the upstream from environment variables — `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, or `LLM_API_KEY` + `LLM_BASE_URL` (point this at any OpenAI-compatible gateway). See **Deployment**.
+  - **Anthropic / OpenAI / OpenAI-compatible (browser key)** — the call goes directly from the browser; the key is stored **only in this browser's localStorage** and is **never** included in any campaign or client export. Fine for local/internal use.
 - **Built-in** — a local, deterministic, no-backend generator (`src/lib/suggestions.ts`) that composes copy from your keywords and theme. Always available, and the automatic fallback when no AI provider is connected.
 
-Both modes show suggestions with live character counts and checkboxes so you pick which to add; "Regenerate" surfaces fresh options. The AI layer lives in `src/lib/ai.ts` (provider-agnostic, unit-tested parsing/filtering); the key never leaves the browser. For a shared/production deployment, proxy the LLM call through a backend so the key isn't exposed client-side — the same `generateCopyWithAI` interface can point at your proxy via the OpenAI-compatible base URL.
+Both modes show suggestions with live character counts and checkboxes so you pick which to add; "Regenerate" surfaces fresh options. The AI layer lives in `src/lib/ai.ts` (provider-agnostic, unit-tested parsing/filtering) with a shared server handler in `server/llm-handler.mjs`. Requests use structured JSON output; responses are parsed robustly and filtered to valid, non-duplicate items within the RSA character limits.
 
 ### Spreadsheet paste support
 
@@ -138,7 +151,25 @@ npm run preview    # preview the production build
 
 ## Deployment
 
-The output in `dist/` is a static SPA. Deploy it to any static host (Netlify, Vercel, GitHub Pages, S3/CloudFront, etc.). The app uses a hash router (`#/` editor, `#/review` client), so no server-side rewrite rules are required.
+The output in `dist/` is a static SPA using a hash router (`#/` dashboard, `#/editor`, `#/review`), so it works on any static host (Netlify, Vercel, GitHub Pages, S3/CloudFront) with no rewrite rules.
+
+**With server-side AI (recommended).** To keep the LLM key off the browser, serve the build with the bundled Node server, which also exposes the `/api/llm/chat` proxy:
+
+```bash
+npm run build
+ANTHROPIC_API_KEY=sk-ant-... npm start     # serves dist/ + proxy on PORT (default 8080)
+```
+
+The proxy reads its upstream from the environment (or a gitignored `.env.local`):
+
+```bash
+# pick ONE provider:
+ANTHROPIC_API_KEY=sk-ant-...                # Anthropic (default model claude-opus-4-8; override ANTHROPIC_MODEL)
+OPENAI_API_KEY=sk-...                        # OpenAI (override OPENAI_MODEL)
+LLM_API_KEY=...  LLM_BASE_URL=https://your-gateway/v1  LLM_MODEL=...   # any OpenAI-compatible gateway
+```
+
+During development the same `/api/llm/chat` endpoint is served by Vite middleware, so `npm run dev` with a key in `.env.local` gives you the server-proxy path locally. In the app, choose the **Server proxy** provider in AI settings (no key entered in the browser). The static-only deploy still works — it just falls back to the browser-key providers or the built-in generator.
 
 ---
 

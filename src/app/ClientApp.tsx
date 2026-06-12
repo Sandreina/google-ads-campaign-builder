@@ -46,7 +46,7 @@ function ClientAppInner() {
         <div className="flex h-full flex-col">
           <CampaignSidebar mode="client" current={view} onNavigate={setView} />
           <div className="no-print mt-auto border-t border-border p-3">
-            <Button variant="ghost" size="sm" className="w-full justify-start text-muted-foreground" onClick={() => navigate('/')}>
+            <Button variant="ghost" size="sm" className="w-full justify-start text-muted-foreground" onClick={() => navigate('/editor')}>
               <ArrowLeft className="h-3.5 w-3.5" /> Exit preview
             </Button>
           </div>

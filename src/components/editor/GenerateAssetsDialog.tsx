@@ -277,7 +277,7 @@ export function GenerateAssetsDialog({
 
         <Badge tone={mode === 'ai' && isAiConfigured(aiSettings) ? 'info' : 'neutral'} className="self-start">
           {mode === 'ai' && isAiConfigured(aiSettings)
-            ? `AI: ${aiSettings?.model} · review before adding`
+            ? `AI${aiSettings?.provider === 'proxy' ? ' (server proxy)' : aiSettings?.model ? `: ${aiSettings.model}` : ''} · review before adding`
             : 'Generated locally · review before adding'}
         </Badge>
       </div>

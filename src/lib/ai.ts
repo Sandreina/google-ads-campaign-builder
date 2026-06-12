@@ -10,26 +10,35 @@ import { maxCharsFor } from './validation';
  * (src/lib/suggestions.ts) when no provider is configured.
  */
 
-export type AiProvider = 'anthropic' | 'openai' | 'compatible';
+export type AiProvider = 'proxy' | 'anthropic' | 'openai' | 'compatible';
 
 export interface AiSettings {
   provider: AiProvider;
   apiKey: string;
   model: string;
-  /** Required for the OpenAI-compatible provider (e.g. a gateway base URL). */
+  /**
+   * For 'compatible': the provider base URL.
+   * For 'proxy': the proxy endpoint path (defaults to /api/llm/chat).
+   */
   baseUrl?: string;
 }
 
 export function isAiConfigured(settings: AiSettings | null | undefined): settings is AiSettings {
-  return !!settings && !!settings.apiKey.trim() && !!settings.model.trim();
+  if (!settings) return false;
+  // The server proxy holds the key, so the browser needs no key/model.
+  if (settings.provider === 'proxy') return true;
+  return !!settings.apiKey.trim() && !!settings.model.trim();
 }
 
 export const DEFAULT_MODELS: Record<AiProvider, string> = {
+  proxy: '',
   // Per Anthropic guidance, default to the most capable current model.
   anthropic: 'claude-opus-4-8',
   openai: 'gpt-4o-mini',
   compatible: '',
 };
+
+export const DEFAULT_PROXY_PATH = '/api/llm/chat';
 
 /** Build the instruction prompt for a given asset type. */
 export function buildPrompt(input: SuggestionInput, type: AssetType, count: number): string {
@@ -157,11 +166,26 @@ interface GenerateOptions {
 export async function generateCopyWithAI(opts: GenerateOptions): Promise<string[]> {
   const { input, type, count, settings, signal } = opts;
   const prompt = buildPrompt(input, type, count);
-  const raw =
-    settings.provider === 'anthropic'
-      ? await callAnthropic(prompt, settings, signal)
-      : await callOpenAICompatible(prompt, settings, signal);
+  let raw: string;
+  if (settings.provider === 'proxy') raw = await callProxy(prompt, settings, signal);
+  else if (settings.provider === 'anthropic') raw = await callAnthropic(prompt, settings, signal);
+  else raw = await callOpenAICompatible(prompt, settings, signal);
   return parseItems(raw);
+}
+
+async function callProxy(prompt: string, settings: AiSettings, signal?: AbortSignal): Promise<string> {
+  const endpoint = (settings.baseUrl?.trim() || DEFAULT_PROXY_PATH).replace(/\/+$/, '');
+  const res = await fetch(endpoint, {
+    method: 'POST',
+    signal,
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ prompt, model: settings.model.trim() || undefined }),
+  });
+  if (!res.ok) throw new AiError(await readError(res));
+  const data = await res.json();
+  const text = data?.text ?? '';
+  if (!text) throw new AiError('The proxy returned an empty response.');
+  return text;
 }
 
 async function callAnthropic(prompt: string, settings: AiSettings, signal?: AbortSignal): Promise<string> {
