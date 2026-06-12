@@ -30,7 +30,7 @@ The intended workflow:
 - **Ad group workspace** with tabs:
   - **Overview** — name, theme, search intent, final URL, display paths, client-facing context, internal note.
   - **Keywords** — paste in bulk, add/edit/delete, change match types, apply a match type to many, search/filter, negative keywords.
-  - **Ad Copy** — headline and description panels with drag-to-reorder, pins, activate/deactivate, inline edit, duplicate, delete, multi-select bulk actions, and a sticky ad preview.
+  - **Ad Copy** — headline and description panels with drag-to-reorder, pins, activate/deactivate, inline edit, duplicate, delete, multi-select bulk actions, a one-click **Generate** action (see below), and a sticky ad preview.
   - **Preview** — step through valid ad combinations on desktop/mobile.
   - **Client Feedback** — per-ad-group client feedback with internal resolution notes.
 - **Client Feedback** (campaign-wide) — summary cards, grouped feedback, "show only items requiring action" filter, jump-to-asset.
@@ -58,6 +58,10 @@ Every asset type supports bulk entry from a prominent **Paste** action:
   - `clinical trial imaging` → **broad**
   - `"clinical trial imaging software"` → **phrase**
   - `[oncology trial imaging]` → **exact**
+
+### Generate ad copy from keywords + context
+
+In the **Ad Copy** tab, each panel has a **Generate** action. It builds candidate headlines and descriptions from the ad group's **keywords, theme, search intent, and client-facing context**. Generation runs **locally** (no backend, deterministic): every suggestion respects the RSA character limits, is de-duplicated against existing assets, and is shown with a live character count and checkboxes so you choose which to add. "Regenerate" surfaces alternative combinations. The more keywords and context you provide, the more tailored the suggestions. The generator lives in `src/lib/suggestions.ts` and is unit-tested; it can later be swapped for an LLM-backed endpoint behind the same interface.
 
 ### Spreadsheet paste support
 

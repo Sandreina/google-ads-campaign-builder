@@ -9,6 +9,7 @@ import {
   Eye,
   MessageSquare,
   LayoutDashboard,
+  Sparkles,
 } from 'lucide-react';
 import type { AdGroup } from '@/types';
 import { useStore } from '@/store/CampaignStore';
@@ -22,6 +23,7 @@ import { AssetManager } from './AssetManager';
 import { KeywordManager } from './KeywordManager';
 import { AdGroupSettings } from './AdGroupSettings';
 import { BulkAssetDialog } from './BulkAssetDialog';
+import { GenerateAssetsDialog } from './GenerateAssetsDialog';
 import { InternalNote } from './InternalNote';
 import { GoogleSearchAdPreview } from '@/components/shared/GoogleSearchAdPreview';
 import { EditorFeedbackPanel } from './EditorFeedbackPanel';
@@ -33,6 +35,7 @@ export function AdGroupWorkspace({ adGroup }: { adGroup: AdGroup }) {
   const toast = useToast();
   const [tab, setTab] = useState('overview');
   const [pasteType, setPasteType] = useState<'headline' | 'description' | null>(null);
+  const [generateType, setGenerateType] = useState<'headline' | 'description' | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const counts = adGroupAssetCounts(adGroup);
@@ -116,9 +119,14 @@ export function AdGroupWorkspace({ adGroup }: { adGroup: AdGroup }) {
                       </CardTitle>
                       <CardDescription>Drag to reorder · pin · activate · edit inline</CardDescription>
                     </div>
-                    <Button size="sm" onClick={() => setPasteType('headline')}>
-                      <ClipboardPaste className="h-3.5 w-3.5" /> Paste Headlines
-                    </Button>
+                    <div className="flex items-center gap-1.5">
+                      <Button variant="outline" size="sm" onClick={() => setGenerateType('headline')}>
+                        <Sparkles className="h-3.5 w-3.5" /> Generate
+                      </Button>
+                      <Button size="sm" onClick={() => setPasteType('headline')}>
+                        <ClipboardPaste className="h-3.5 w-3.5" /> Paste Headlines
+                      </Button>
+                    </div>
                   </CardHeader>
                   <CardContent>
                     <AssetManager adGroup={adGroup} type="headline" />
@@ -133,9 +141,14 @@ export function AdGroupWorkspace({ adGroup }: { adGroup: AdGroup }) {
                       </CardTitle>
                       <CardDescription>Drag to reorder · pin · activate · edit inline</CardDescription>
                     </div>
-                    <Button size="sm" onClick={() => setPasteType('description')}>
-                      <ClipboardPaste className="h-3.5 w-3.5" /> Paste Descriptions
-                    </Button>
+                    <div className="flex items-center gap-1.5">
+                      <Button variant="outline" size="sm" onClick={() => setGenerateType('description')}>
+                        <Sparkles className="h-3.5 w-3.5" /> Generate
+                      </Button>
+                      <Button size="sm" onClick={() => setPasteType('description')}>
+                        <ClipboardPaste className="h-3.5 w-3.5" /> Paste Descriptions
+                      </Button>
+                    </div>
                   </CardHeader>
                   <CardContent>
                     <AssetManager adGroup={adGroup} type="description" />
@@ -198,6 +211,17 @@ export function AdGroupWorkspace({ adGroup }: { adGroup: AdGroup }) {
         onClose={() => setPasteType(null)}
         type={pasteType ?? 'headline'}
         onImport={(items, mode) => pasteType && importAssets(pasteType, items, mode)}
+      />
+
+      <GenerateAssetsDialog
+        open={generateType !== null}
+        onClose={() => setGenerateType(null)}
+        adGroup={adGroup}
+        type={generateType ?? 'headline'}
+        onAdd={(texts) => {
+          if (!generateType || texts.length === 0) return;
+          importAssets(generateType, texts.map((text) => ({ text })), 'append');
+        }}
       />
 
       <ConfirmationDialog
