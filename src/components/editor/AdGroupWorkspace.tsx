@@ -24,6 +24,7 @@ import { KeywordManager } from './KeywordManager';
 import { AdGroupSettings } from './AdGroupSettings';
 import { BulkAssetDialog } from './BulkAssetDialog';
 import { GenerateAssetsDialog } from './GenerateAssetsDialog';
+import { AiSettingsDialog } from './AiSettingsDialog';
 import { InternalNote } from './InternalNote';
 import { GoogleSearchAdPreview } from '@/components/shared/GoogleSearchAdPreview';
 import { EditorFeedbackPanel } from './EditorFeedbackPanel';
@@ -36,6 +37,7 @@ export function AdGroupWorkspace({ adGroup }: { adGroup: AdGroup }) {
   const [tab, setTab] = useState('overview');
   const [pasteType, setPasteType] = useState<'headline' | 'description' | null>(null);
   const [generateType, setGenerateType] = useState<'headline' | 'description' | null>(null);
+  const [aiSettingsOpen, setAiSettingsOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const counts = adGroupAssetCounts(adGroup);
@@ -218,11 +220,14 @@ export function AdGroupWorkspace({ adGroup }: { adGroup: AdGroup }) {
         onClose={() => setGenerateType(null)}
         adGroup={adGroup}
         type={generateType ?? 'headline'}
+        onOpenSettings={() => setAiSettingsOpen(true)}
         onAdd={(texts) => {
           if (!generateType || texts.length === 0) return;
           importAssets(generateType, texts.map((text) => ({ text })), 'append');
         }}
       />
+
+      <AiSettingsDialog open={aiSettingsOpen} onClose={() => setAiSettingsOpen(false)} onSaved={() => {}} />
 
       <ConfirmationDialog
         open={confirmDelete}

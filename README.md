@@ -61,7 +61,12 @@ Every asset type supports bulk entry from a prominent **Paste** action:
 
 ### Generate ad copy from keywords + context
 
-In the **Ad Copy** tab, each panel has a **Generate** action. It builds candidate headlines and descriptions from the ad group's **keywords, theme, search intent, and client-facing context**. Generation runs **locally** (no backend, deterministic): every suggestion respects the RSA character limits, is de-duplicated against existing assets, and is shown with a live character count and checkboxes so you choose which to add. "Regenerate" surfaces alternative combinations. The more keywords and context you provide, the more tailored the suggestions. The generator lives in `src/lib/suggestions.ts` and is unit-tested; it can later be swapped for an LLM-backed endpoint behind the same interface.
+In the **Ad Copy** tab, each panel has a **Generate** action that builds candidate headlines and descriptions from the ad group's **keywords, theme, search intent, and client-facing context**. The dialog has two modes:
+
+- **AI** — a real LLM writes the copy from your inputs. Connect a provider once via **AI settings** (gear in the Generate dialog): **Anthropic (Claude)**, **OpenAI**, or any **OpenAI-compatible** endpoint (paste a gateway base URL). The call is made directly from the browser, so the API key is stored **only in this browser's localStorage** and is **never** included in any campaign or client export. The request uses structured JSON output; responses are parsed robustly and filtered to valid, non-duplicate items within the RSA character limits.
+- **Built-in** — a local, deterministic, no-backend generator (`src/lib/suggestions.ts`) that composes copy from your keywords and theme. Always available, and the automatic fallback when no AI provider is connected.
+
+Both modes show suggestions with live character counts and checkboxes so you pick which to add; "Regenerate" surfaces fresh options. The AI layer lives in `src/lib/ai.ts` (provider-agnostic, unit-tested parsing/filtering); the key never leaves the browser. For a shared/production deployment, proxy the LLM call through a backend so the key isn't exposed client-side — the same `generateCopyWithAI` interface can point at your proxy via the OpenAI-compatible base URL.
 
 ### Spreadsheet paste support
 
