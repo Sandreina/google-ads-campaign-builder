@@ -1,7 +1,8 @@
-import type { CampaignProposal, ClientReview } from '@/types';
-import { formatKeyword } from './parsing';
+import type { AdAsset, AdGroup, CampaignProposal, ClientReview, Keyword, MatchType } from '@/types';
+import { formatKeyword, detectKeyword } from './parsing';
 import { maxCharsFor } from './validation';
 import { getAssetFeedback } from './review';
+import { generateId, nowIso } from './utils';
 
 /** Escape a value for CSV (RFC 4180). */
 export function csvCell(value: string | number | boolean | undefined | null): string {
@@ -302,6 +303,91 @@ export function feedbackToCsv(campaign: CampaignProposal, review: ClientReview):
   }
   rows.push(['Campaign', 'Final Status', '', '', review.campaignStatus, review.finalComment, reviewer]);
   return toCsv(rows);
+}
+
+/**
+ * Build ad groups from previewed CSV rows. Rows are grouped by "Ad Group";
+ * invalid rows are skipped. Keyword/headline/description rows become the
+ * corresponding nested assets, with match types, URLs, paths, pins, and active
+ * flags applied. Asset order and stable IDs are assigned here.
+ */
+export function adGroupsFromCsv(rows: ParsedCsvRow[]): AdGroup[] {
+  const groups = new Map<string, AdGroup>();
+  const order = { headline: new Map<string, number>(), description: new Map<string, number>() };
+
+  const ensure = (name: string): AdGroup => {
+    let ag = groups.get(name);
+    if (!ag) {
+      ag = {
+        id: generateId('ag'),
+        name,
+        theme: '',
+        searchIntent: '',
+        finalUrl: 'https://example.com',
+        path1: '',
+        path2: '',
+        clientFacingContext: '',
+        keywords: [],
+        negativeKeywords: [],
+        headlines: [],
+        descriptions: [],
+      };
+      groups.set(name, ag);
+    }
+    return ag;
+  };
+
+  const ts = nowIso();
+  const mkAsset = (type: 'headline' | 'description', row: ParsedCsvRow, idx: number): AdAsset => {
+    const pin = parseInt(row.pinPosition, 10);
+    return {
+      id: generateId('asset'),
+      type,
+      text: row.text,
+      order: idx,
+      pinPosition: Number.isFinite(pin) && pin > 0 ? pin : null,
+      active: !/^(false|no|0|inactive|off)$/i.test(row.active),
+      createdAt: ts,
+      updatedAt: ts,
+    };
+  };
+  const mkKeyword = (row: ParsedCsvRow): Keyword => {
+    const detected = detectKeyword(row.text);
+    const matchType = (['broad', 'phrase', 'exact'].includes(row.matchType.toLowerCase())
+      ? (row.matchType.toLowerCase() as MatchType)
+      : detected.matchType);
+    return {
+      id: generateId('kw'),
+      text: detected.text || row.text,
+      matchType,
+      active: !/^(false|no|0|inactive|off)$/i.test(row.active),
+    };
+  };
+
+  for (const row of rows) {
+    if (row.invalid) continue;
+    const ag = ensure(row.adGroup);
+    if (row.finalUrl && ag.finalUrl === 'https://example.com') ag.finalUrl = row.finalUrl;
+    if (row.path1 && !ag.path1) ag.path1 = row.path1;
+    if (row.path2 && !ag.path2) ag.path2 = row.path2;
+
+    const type = row.assetType.toLowerCase();
+    if (type === 'headline') {
+      const idx = order.headline.get(ag.id) ?? 0;
+      ag.headlines.push(mkAsset('headline', row, idx));
+      order.headline.set(ag.id, idx + 1);
+    } else if (type === 'description') {
+      const idx = order.description.get(ag.id) ?? 0;
+      ag.descriptions.push(mkAsset('description', row, idx));
+      order.description.set(ag.id, idx + 1);
+    } else if (type === 'negative keyword') {
+      ag.negativeKeywords.push(mkKeyword(row));
+    } else if (type === 'keyword') {
+      ag.keywords.push(mkKeyword(row));
+    }
+  }
+
+  return [...groups.values()];
 }
 
 function emptyAg(adGroupId: string) {

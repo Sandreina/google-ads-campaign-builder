@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Loader2, RotateCcw, Trash2, LayoutGrid } from 'lucide-react';
 import { CampaignStoreProvider, useStore } from '@/store/CampaignStore';
@@ -16,6 +16,7 @@ import {
   ExportDialog,
   ClientReviewPackageDialog,
 } from '@/components/editor/ProjectDialogs';
+import { GlobalSearchDialog } from '@/components/editor/GlobalSearchDialog';
 import { ConfirmationDialog } from '@/components/ui/Dialog';
 import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
@@ -39,7 +40,19 @@ function EditorAppInner() {
   const [importOpen, setImportOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [packageOpen, setPackageOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setSearchOpen(true);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   if (!loaded || !campaign) {
     return (
@@ -68,6 +81,7 @@ function EditorAppInner() {
           onExport={() => setExportOpen(true)}
           onCreatePackage={() => setPackageOpen(true)}
           onValidate={() => setView({ kind: 'validation' })}
+          onSearch={() => setSearchOpen(true)}
         />
       }
       sidebar={
@@ -105,6 +119,7 @@ function EditorAppInner() {
       {view.kind === 'validation' && <ValidationSummary onNavigate={setView} />}
       {view.kind === 'final' && <EditorFinalApproval />}
 
+      <GlobalSearchDialog open={searchOpen} onClose={() => setSearchOpen(false)} onNavigate={setView} />
       <ImportDialog open={importOpen} onClose={() => setImportOpen(false)} />
       <ExportDialog open={exportOpen} onClose={() => setExportOpen(false)} />
       <ClientReviewPackageDialog open={packageOpen} onClose={() => setPackageOpen(false)} />

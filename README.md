@@ -44,6 +44,7 @@ The editor's sidebar has an **All projects** link to return here. The editor liv
   - **Ad Copy** — headline and description panels with drag-to-reorder, pins, activate/deactivate, inline edit, duplicate, delete, multi-select bulk actions, a one-click **Generate** action (see below), and a sticky ad preview.
   - **Preview** — step through valid ad combinations on desktop/mobile.
   - **Client Feedback** — per-ad-group client feedback with internal resolution notes.
+- **Global search** (toolbar button or ⌘K / Ctrl+K) — a command-palette that searches across ad groups, keywords, headlines, descriptions, client comments, and (Editor Mode only) internal notes; arrow-key navigation, Enter to jump to the ad group. Internal notes are searched only in Editor Mode — never surfaced in Client Review Mode.
 - **Client Feedback** (campaign-wide) — summary cards, grouped feedback, "show only items requiring action" filter, jump-to-asset.
 - **Validation** — missing assets, over-limit assets, duplicates, invalid URLs, pin conflicts, thin ad groups, unresolved change requests.
 - **Final Approval** — submission status, ad group status, and version controls.
@@ -184,7 +185,7 @@ During development the same `/api/llm/chat` endpoint is served by Vite middlewar
 
 - **Full project (JSON)** — `{ campaign, review, internal }`, validated with Zod.
 - **Returned client feedback (JSON)** — a `ClientReview` (or a client review package); merged into the current campaign after a campaign-id check.
-- **Campaign CSV** — columns: `Campaign, Ad Group, Asset Type, Asset Number, Text, Match Type, Final URL, Path 1, Path 2, Pin Position, Active`. Asset types: `Keyword`, `Negative Keyword`, `Headline`, `Description`. A preview shows detected campaigns/ad groups, counts, duplicate rows, invalid rows, and character-limit issues before confirming.
+- **Campaign CSV** — columns: `Campaign, Ad Group, Asset Type, Asset Number, Text, Match Type, Final URL, Path 1, Path 2, Pin Position, Active`. Asset types: `Keyword`, `Negative Keyword`, `Headline`, `Description`. A preview shows detected campaigns/ad groups, counts, duplicate rows, invalid rows, and character-limit issues; confirming **builds a new project** — rows are grouped into ad groups with their keywords, headlines, descriptions, URLs, paths, pins, and active flags (invalid rows skipped), and the project opens in the editor.
 
 ## Export formats
 

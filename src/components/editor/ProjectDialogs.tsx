@@ -15,9 +15,10 @@ import { Badge } from '@/components/ui/Badge';
 import { useStore } from '@/store/CampaignStore';
 import { useToast } from '@/components/ui/Toast';
 import { downloadFile, slugify } from '@/lib/utils';
-import { campaignToCsv, feedbackToCsv, previewCsvImport } from '@/lib/csv';
+import { campaignToCsv, feedbackToCsv, previewCsvImport, adGroupsFromCsv } from '@/lib/csv';
 import { buildClientReviewPackage, assertNoInternalData } from '@/lib/sanitize';
 import { projectBundleSchema, clientReviewSchema } from '@/lib/schemas';
+import { createBlankProject } from '@/lib/project';
 import type { ProjectBundle } from '@/types';
 
 /* ---------------- Export Dialog ---------------- */
@@ -199,13 +200,18 @@ export function ImportDialog({ open, onClose }: { open: boolean; onClose: () => 
             </Button>
             <Button
               onClick={() => {
-                toast('CSV preview confirmed (structure parsing demo)');
+                const adGroups = adGroupsFromCsv(csvPreview.parsedRows);
+                const campaignName = [...csvPreview.campaigns][0] || 'Imported campaign';
+                const project = createBlankProject({ clientName: 'Imported', campaignName });
+                project.campaign.adGroups = adGroups;
+                loadProject(project);
+                toast(`Imported ${adGroups.length} ad groups from CSV`);
                 onClose();
                 setCsvPreview(null);
               }}
               disabled={csvPreview.invalidRows === csvPreview.parsedRows.length}
             >
-              Looks good
+              Import {csvPreview.adGroups.size} ad groups
             </Button>
           </>
         ) : undefined

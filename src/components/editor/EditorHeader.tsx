@@ -9,6 +9,7 @@ import {
   Loader2,
   PackageCheck,
   Sparkles,
+  Search,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -23,11 +24,13 @@ export function EditorHeader({
   onExport,
   onCreatePackage,
   onValidate,
+  onSearch,
 }: {
   onImport: () => void;
   onExport: () => void;
   onCreatePackage: () => void;
   onValidate: () => void;
+  onSearch: () => void;
 }) {
   const { campaign, review, saveStatus, lastSavedAt } = useStore();
   const navigate = useNavigate();
@@ -57,6 +60,9 @@ export function EditorHeader({
 
         <div className="flex flex-wrap items-center gap-1.5">
           <SaveIndicator status={saveStatus} lastSavedAt={lastSavedAt} />
+          <Button variant="outline" size="sm" onClick={onSearch} aria-label="Search campaign" title="Search (⌘K)">
+            <Search className="h-3.5 w-3.5" /> Search
+          </Button>
           <Button variant="outline" size="sm" onClick={onImport}>
             <Upload className="h-3.5 w-3.5" /> Import
           </Button>
