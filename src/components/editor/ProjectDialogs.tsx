@@ -8,6 +8,10 @@ import {
   Link as LinkIcon,
   AlertTriangle,
   CheckCircle2,
+  ClipboardCopy,
+  Megaphone,
+  KeyRound,
+  Ban,
 } from 'lucide-react';
 import { Dialog } from '@/components/ui/Dialog';
 import { Button } from '@/components/ui/Button';
@@ -16,6 +20,12 @@ import { useStore } from '@/store/CampaignStore';
 import { useToast } from '@/components/ui/Toast';
 import { downloadFile, slugify } from '@/lib/utils';
 import { campaignToCsv, feedbackToCsv, previewCsvImport, adGroupsFromCsv } from '@/lib/csv';
+import {
+  campaignToEditorAdsTsv,
+  campaignToEditorKeywordsTsv,
+  campaignToEditorNegativesTsv,
+  hasNegatives,
+} from '@/lib/google-ads-editor';
 import { buildClientReviewPackage, assertNoInternalData } from '@/lib/sanitize';
 import { projectBundleSchema, clientReviewSchema } from '@/lib/schemas';
 import { createBlankProject } from '@/lib/project';
@@ -57,22 +67,101 @@ export function ExportDialog({ open, onClose }: { open: boolean; onClose: () => 
     toast('Feedback CSV exported');
   };
 
+  async function copyTsv(label: string, tsv: string) {
+    try {
+      await navigator.clipboard.writeText(tsv);
+      toast(`${label} copied — paste into Google Ads Editor`);
+    } catch {
+      toast('Copy failed — use the download instead', 'error');
+    }
+  }
+  const downloadTsv = (name: string, tsv: string, label: string) => {
+    downloadFile(`${base}-${name}.tsv`, tsv, 'text/tab-separated-values');
+    toast(`${label} downloaded`);
+  };
+
   return (
-    <Dialog open={open} onClose={onClose} title="Export" description="Download project data, sanitized packages, and feedback." size="md">
-      <div className="flex flex-col gap-2.5">
-        <ExportRow icon={FileJson} title="Full project (JSON)" desc="Campaign, client review, and internal notes." onClick={exportProject} />
-        <ExportRow
-          icon={PackageCheck}
-          title="Client review package (JSON)"
-          desc="Sanitized — safe to share with the client. No internal notes."
-          onClick={exportClientPackage}
-          highlight
-        />
-        <ExportRow icon={FileJson} title="Client feedback only (JSON)" desc="Just the review state to re-import." onClick={exportFeedbackJson} />
-        <ExportRow icon={FileSpreadsheet} title="Campaign structure (CSV)" desc="All keywords, headlines, and descriptions." onClick={exportCampaignCsv} />
-        <ExportRow icon={FileSpreadsheet} title="Client feedback (CSV)" desc="Approvals and comments. No internal notes." onClick={exportFeedbackCsv} />
+    <Dialog open={open} onClose={onClose} title="Export" description="Send to Google Ads Editor, or download project data and feedback." size="md">
+      <div className="flex flex-col gap-4">
+        <section className="flex flex-col gap-2">
+          <div>
+            <h3 className="text-sm font-semibold">Google Ads Editor</h3>
+            <p className="text-xs text-muted-foreground">
+              Copy a block and paste it straight into Google Ads Editor's grid (or download the .tsv). Pins are
+              included as position columns; over-limit and inactive assets are excluded.
+            </p>
+          </div>
+          <EditorExportRow
+            icon={Megaphone}
+            title="Responsive Search Ads"
+            desc="One RSA per ad group — headlines, descriptions, paths, final URL."
+            onCopy={() => copyTsv('Responsive Search Ads', campaignToEditorAdsTsv(campaign))}
+            onDownload={() => downloadTsv('google-ads-editor-ads', campaignToEditorAdsTsv(campaign), 'Ads')}
+          />
+          <EditorExportRow
+            icon={KeyRound}
+            title="Keywords"
+            desc="Campaign, ad group, keyword, match type, status."
+            onCopy={() => copyTsv('Keywords', campaignToEditorKeywordsTsv(campaign))}
+            onDownload={() => downloadTsv('google-ads-editor-keywords', campaignToEditorKeywordsTsv(campaign), 'Keywords')}
+          />
+          {hasNegatives(campaign) && (
+            <EditorExportRow
+              icon={Ban}
+              title="Negative keywords"
+              desc="For Editor's negative keywords grid."
+              onCopy={() => copyTsv('Negative keywords', campaignToEditorNegativesTsv(campaign))}
+              onDownload={() => downloadTsv('google-ads-editor-negatives', campaignToEditorNegativesTsv(campaign), 'Negative keywords')}
+            />
+          )}
+        </section>
+
+        <section className="flex flex-col gap-2.5 border-t border-border pt-4">
+          <h3 className="text-sm font-semibold">Project & feedback</h3>
+          <ExportRow icon={FileJson} title="Full project (JSON)" desc="Campaign, client review, and internal notes." onClick={exportProject} />
+          <ExportRow
+            icon={PackageCheck}
+            title="Client review package (JSON)"
+            desc="Sanitized — safe to share with the client. No internal notes."
+            onClick={exportClientPackage}
+            highlight
+          />
+          <ExportRow icon={FileJson} title="Client feedback only (JSON)" desc="Just the review state to re-import." onClick={exportFeedbackJson} />
+          <ExportRow icon={FileSpreadsheet} title="Campaign structure (CSV)" desc="All keywords, headlines, and descriptions." onClick={exportCampaignCsv} />
+          <ExportRow icon={FileSpreadsheet} title="Client feedback (CSV)" desc="Approvals and comments. No internal notes." onClick={exportFeedbackCsv} />
+        </section>
       </div>
     </Dialog>
+  );
+}
+
+function EditorExportRow({
+  icon: Icon,
+  title,
+  desc,
+  onCopy,
+  onDownload,
+}: {
+  icon: typeof FileJson;
+  title: string;
+  desc: string;
+  onCopy: () => void;
+  onDownload: () => void;
+}) {
+  return (
+    <div className="flex items-center gap-3 rounded-md border border-border p-3">
+      <Icon className="h-5 w-5 shrink-0 text-muted-foreground" />
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-medium">{title}</p>
+        <p className="text-xs text-muted-foreground">{desc}</p>
+      </div>
+      <Button size="sm" onClick={onCopy}>
+        <ClipboardCopy className="h-3.5 w-3.5" /> Copy
+      </Button>
+      <Button variant="outline" size="icon" aria-label={`Download ${title} as TSV`} onClick={onDownload}>
+        <Download className="h-4 w-4" />
+      </Button>
+    </div>
   );
 }
 

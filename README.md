@@ -1,4 +1,4 @@
-# Google Ads Campaign Review
+# Google Ads Campaign Builder
 
 A polished web application that helps a paid media specialist **build, organize, present, and collect approval** for a Google Ads Search campaign. It replaces the spreadsheet-and-email approval loop with a dedicated, app-like experience split into two strictly separated modes:
 
@@ -189,6 +189,10 @@ During development the same `/api/llm/chat` endpoint is served by Vite middlewar
 
 ## Export formats
 
+- **Google Ads Editor (copy & paste)** — from **Export**, copy a tab-separated block straight into Google Ads Editor's paste grid, or download the `.tsv`:
+  - **Responsive Search Ads** — one RSA per ad group with `Headline 1..15` / `Description 1..4`, `Path 1/2`, and `Final URL`. Pins are carried in the matching `Headline N position` / `Description N position` columns. Inactive, empty, over-limit, and duplicate assets are excluded so the paste imports cleanly.
+  - **Keywords** — `Campaign, Ad Group, Keyword, Match Type, Final URL, Status` (one row per keyword; bare terms with a Match Type column, as Editor expects).
+  - **Negative keywords** — `Campaign, Ad Group, Keyword, Match Type` for Editor's negative-keywords grid.
 - **Full project (JSON)** — everything, including internal data (for your own backups).
 - **Client review package (JSON)** — sanitized; safe to share.
 - **Client feedback only (JSON / CSV)** — approvals and comments, no internal data.

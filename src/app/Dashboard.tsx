@@ -116,8 +116,8 @@ export function Dashboard() {
               <Sparkles className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-base font-semibold leading-tight">Campaign Review</h1>
-              <p className="text-xs text-muted-foreground">Google Ads approval workspace</p>
+              <h1 className="text-base font-semibold leading-tight">Google Ads Campaign Builder</h1>
+              <p className="text-xs text-muted-foreground">Build campaigns and collect client approval</p>
             </div>
           </div>
           <div className="flex items-center gap-2">

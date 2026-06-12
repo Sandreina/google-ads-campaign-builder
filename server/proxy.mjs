@@ -96,5 +96,5 @@ server.listen(PORT, () => {
         ? 'OpenAI-compatible'
         : 'none (set ANTHROPIC_API_KEY / OPENAI_API_KEY / LLM_API_KEY+LLM_BASE_URL)';
   // eslint-disable-next-line no-console
-  console.log(`Campaign Review running at http://localhost:${PORT}  ·  LLM proxy: ${provider}`);
+  console.log(`Google Ads Campaign Builder running at http://localhost:${PORT}  ·  LLM proxy: ${provider}`);
 });
