@@ -23,20 +23,29 @@ export function Dialog({
 }) {
   const ref = useRef<HTMLDivElement>(null);
 
+  // Keep the latest onClose in a ref so the effect below depends only on `open`
+  // — otherwise an inline `onClose` (new identity every render) would re-run
+  // the effect on each keystroke and steal focus from inputs.
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') onCloseRef.current();
     };
     document.addEventListener('keydown', onKey);
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    ref.current?.focus();
+    // Move focus into the dialog for accessibility — but only if focus isn't
+    // already inside it (e.g. an autoFocus field), so we never blur an input.
+    const el = ref.current;
+    if (el && !el.contains(document.activeElement)) el.focus();
     return () => {
       document.removeEventListener('keydown', onKey);
       document.body.style.overflow = prev;
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
 
