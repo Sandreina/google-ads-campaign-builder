@@ -154,7 +154,27 @@ npm run preview    # preview the production build
 
 The output in `dist/` is a static SPA using a hash router (`#/` dashboard, `#/editor`, `#/review`), so it works on any static host (Netlify, Vercel, GitHub Pages, S3/CloudFront) with no rewrite rules.
 
-**With server-side AI (recommended).** To keep the LLM key off the browser, serve the build with the bundled Node server, which also exposes the `/api/llm/chat` proxy:
+### Railway (recommended — one service)
+
+The bundled Node server serves the SPA **and** the `/api/llm/chat` proxy, so Railway needs no extra config (`railway.json` is included):
+
+1. Railway → **New Project → Deploy from GitHub repo** → pick this repo.
+2. Nixpacks runs `npm install` → `npm run build`; the service starts with `npm start` and listens on Railway's `$PORT`.
+3. (Optional, for server-side AI) add a variable: `ANTHROPIC_API_KEY` (or `OPENAI_API_KEY`, or `LLM_API_KEY` + `LLM_BASE_URL` + `LLM_MODEL`). In the app's AI settings choose **Server proxy**.
+4. Generate a domain under the service's **Settings → Networking**.
+
+### Vercel (static SPA + serverless proxy)
+
+`vercel.json` (Vite preset) and `api/llm/chat.mjs` (the proxy as a serverless function) are included:
+
+1. Vercel → **Add New → Project → Import** this repo. It auto-detects Vite (build `npm run build`, output `dist`).
+2. (Optional, for server-side AI) add the same environment variable(s) as above under **Settings → Environment Variables**, then redeploy. Choose **Server proxy** in the app's AI settings.
+
+Both also work as a pure static deploy (no key) — AI then runs via the built-in generator or a browser-entered key.
+
+### Self-hosted
+
+To keep the LLM key off the browser without a platform, serve the build with the bundled Node server, which also exposes the `/api/llm/chat` proxy:
 
 ```bash
 npm run build
